@@ -275,6 +275,8 @@ services:
   mariadb-module:
     image: mariadb:11.4
     container_name: smartgrid-mariadb-module
+    ports:
+      - "3310:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MODULE_DB_ROOT_PASSWORD:-rootpass}
       MYSQL_DATABASE: ${MODULE_DB_NAME:-module_db}
@@ -304,6 +306,8 @@ services:
   timescaledb-module:
     image: timescale/timescaledb:latest-pg16
     container_name: smartgrid-timescaledb-module
+    ports:
+      - "5440:5432"
     environment:
       POSTGRES_USER: ${TIMESCALE_DB_USER:-module_user}
       POSTGRES_PASSWORD: ${TIMESCALE_DB_PASSWORD:-module_pass}
