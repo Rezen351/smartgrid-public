@@ -145,6 +145,8 @@ services:
       AUTH_SECRET: ${JWT_SECRET}
       EXPORT_API_URL: http://export:8080/export/v1
       MODULE_API_URL: http://module:8080
+      TELEMETRY_PRIMARY_NODE: ${TELEMETRY_PRIMARY_NODE:-dummy-node}
+      TELEMETRY_SOURCE_OVERRIDES: ${TELEMETRY_SOURCE_OVERRIDES:-}
     depends_on:
       - postgres-dashboard
     networks: [ smartgrid-network ]
