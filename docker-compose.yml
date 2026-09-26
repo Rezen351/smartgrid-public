@@ -143,6 +143,10 @@ services:
       DB_PASS: ${POSTGRES_PASSWORD}
       MAX_INTERVAL_SECONDS: 300
       AUTH_SECRET: ${JWT_SECRET}
+      EXPORT_API_URL: http://export:8080/export/v1
+      MODULE_API_URL: http://module:8080
+      TELEMETRY_PRIMARY_NODE: ${TELEMETRY_PRIMARY_NODE:-dummy-node}
+      TELEMETRY_SOURCE_OVERRIDES: ${TELEMETRY_SOURCE_OVERRIDES:-}
     depends_on:
       - postgres-dashboard
     networks: [ smartgrid-network ]
@@ -298,6 +302,8 @@ services:
   mariadb-module:
     image: mariadb:11.4
     container_name: smartgrid-mariadb-module
+    ports:
+      - "3310:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MODULE_DB_ROOT_PASSWORD:-rootpass}
       MYSQL_DATABASE: ${MODULE_DB_NAME:-module_db}
@@ -327,6 +333,8 @@ services:
   timescaledb-module:
     image: timescale/timescaledb:latest-pg16
     container_name: smartgrid-timescaledb-module
+    ports:
+      - "5440:5432"
     environment:
       POSTGRES_USER: ${TIMESCALE_DB_USER:-module_user}
       POSTGRES_PASSWORD: ${TIMESCALE_DB_PASSWORD:-module_pass}
