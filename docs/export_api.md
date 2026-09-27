@@ -1,45 +1,28 @@
 # SmartGrid Export API
 
-Dokumentasi untuk membaca dan mengekspor data telemetry historis dari TimescaleDB melalui Export Service.
+Dokumentasi resmi untuk mengonsumsi endpoint publik ekspor data telemetri historis dari platform SmartGrid.
 
-## 1. Base URL
-
-Pada deployment VPS saat ini, akses API melalui Nginx:
+## Base URL
 
 ```text
-http://167.205.44.103:3001
+https://smartgrid.almuzky.my.id/api/v1/export
 ```
 
-Endpoint Export Service menggunakan prefix versioning `/api/v1/export`:
+Semua endpoint export berada di bawah path prefix tersebut.
 
-```text
-http://smartgrid.almuzky.my.id:3001/api/v1/export
-```
+## Otentikasi
 
-Port `8080` adalah port internal container dan tidak digunakan oleh client dari luar Docker.
+Export Service menggunakan JWT yang diterbitkan oleh Auth Service.
 
-> Ganti alamat IP pada contoh jika deployment menggunakan domain atau IP berbeda.
-
-## 2. Prasyarat akses
-
-Endpoint export membutuhkan access token JWT dari Auth Service. User harus memiliki salah satu role berikut:
-
+Role yang diizinkan:
 - `admin`
 - `operator`
 
-Header yang wajib dikirim:
-
-```http
-Authorization: Bearer ACCESS_TOKEN
-```
-
-## 3. Mendapatkan access token
-
-Login melalui Auth Service:
+### Mendapatkan access token
 
 ```bash
 curl -sS -X POST \
-  "http://smartgrid.almuzky.my.id:3001/api/v1/auth/login" \
+  "https://smartgrid.almuzky.my.id/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
     "identifier": "USERNAME_ATAU_EMAIL",
@@ -47,7 +30,7 @@ curl -sS -X POST \
   }'
 ```
 
-Respons berhasil berisi token pair:
+Respons berhasil:
 
 ```json
 {
@@ -57,14 +40,20 @@ Respons berhasil berisi token pair:
 }
 ```
 
-Gunakan nilai `access_token` pada request export. Jangan menyimpan token di repository atau membagikannya di log publik.
+Gunakan nilai `access_token` pada header berikut:
 
-## 4. Health check
+```http
+Authorization: Bearer ACCESS_TOKEN
+```
+
+Jangan menyimpan token di repository atau membagikannya di log publik.
+
+## Health check
 
 Endpoint ini tidak membutuhkan token:
 
 ```bash
-curl -i "http://smartgrid.almuzky.my.id:3001/api/v1/export/health"
+curl -i "https://smartgrid.almuzky.my.id/api/v1/export/health"
 ```
 
 Respons normal:
@@ -78,14 +67,12 @@ Respons normal:
 }
 ```
 
-## 5. Melihat node dan metric tersedia
-
-Endpoint ini menampilkan node yang memiliki data telemetry beserta metric yang pernah tersimpan:
+## Melihat node dan metric tersedia
 
 ```bash
 curl -sS \
   -H "Authorization: Bearer ACCESS_TOKEN" \
-  "http://smartgrid.almuzky.my.id:3001/api/v1/export/nodes"
+  "https://smartgrid.almuzky.my.id/api/v1/export/nodes"
 ```
 
 Contoh respons:
@@ -107,9 +94,7 @@ Contoh respons:
 
 Gunakan nilai `node_id` dan `metrics` dari respons ini untuk menyusun query telemetry.
 
-## 6. Preview metadata
-
-`/api/v1/export/meta` menghitung jumlah data tanpa mengunduh baris telemetry.
+## Preview metadata
 
 ```bash
 curl -sS -G \
@@ -118,7 +103,7 @@ curl -sS -G \
   --data-urlencode "metric=reg504" \
   --data-urlencode "from=2026-09-12T00:00:00Z" \
   --data-urlencode "to=2026-09-12T23:59:59Z" \
-  "http://smartgrid.almuzky.my.id:3001/api/v1/export/meta"
+  "https://smartgrid.almuzky.my.id/api/v1/export/meta"
 ```
 
 Contoh respons:
@@ -136,9 +121,7 @@ Contoh respons:
 }
 ```
 
-## 7. Query telemetry sebagai JSON
-
-Endpoint utama adalah `/api/v1/export/telemetry`.
+## Query telemetry sebagai JSON
 
 ```bash
 curl -sS -G \
@@ -149,7 +132,7 @@ curl -sS -G \
   --data-urlencode "to=2026-09-12T23:59:59Z" \
   --data-urlencode "format=json" \
   --data-urlencode "limit=100" \
-  "http://smartgrid.almuzky.my.id:3001/api/v1/export/telemetry"
+  "https://smartgrid.almuzky.my.id/api/v1/export/telemetry"
 ```
 
 Contoh respons:
@@ -174,21 +157,7 @@ Contoh respons:
 }
 ```
 
-Parameter query:
-
-| Parameter | Wajib | Keterangan |
-|---|---:|---|
-| `node_id` | Ya | Satu node, beberapa node dipisah koma, atau `*` untuk semua node. |
-| `metric` | Tidak | Satu metric, beberapa metric dipisah koma, atau `*` untuk semua metric. Default `*`. |
-| `from` | Tidak | Waktu awal: RFC3339, `YYYY-MM-DD`, atau Unix timestamp detik. Default 24 jam terakhir. |
-| `to` | Tidak | Waktu akhir: RFC3339, `YYYY-MM-DD`, atau Unix timestamp detik. Default waktu sekarang. |
-| `format` | Tidak | `json` atau `csv`. Default `csv`. |
-| `limit` | Tidak | Jumlah baris per halaman. Default `10000`, maksimum `100000`. |
-| `cursor` | Tidak | Cursor dari respons halaman sebelumnya. |
-
-Metric harus menggunakan nama yang tersimpan di kolom `metric`, misalnya `reg504`, bukan nama `source_key` MQTT jika keduanya berbeda.
-
-## 8. Query beberapa node atau metric
+## Query beberapa node atau metric
 
 ```bash
 curl -sS -G \
@@ -196,7 +165,7 @@ curl -sS -G \
   --data-urlencode "node_id=SmartGrid-01,SmartGrid-02" \
   --data-urlencode "metric=reg504,reg509" \
   --data-urlencode "format=json" \
-  "http://smartgrid.almuzky.my.id:3001/api/v1/export/telemetry"
+  "https://smartgrid.almuzky.my.id/api/v1/export/telemetry"
 ```
 
 Semua metric pada satu node:
@@ -207,7 +176,7 @@ curl -sS -G \
   --data-urlencode "node_id=SmartGrid-01" \
   --data-urlencode "metric=*" \
   --data-urlencode "format=json" \
-  "http://smartgrid.almuzky.my.id:3001/api/v1/export/telemetry"
+  "https://smartgrid.almuzky.my.id/api/v1/export/telemetry"
 ```
 
 Semua node dan semua metric:
@@ -218,10 +187,10 @@ curl -sS -G \
   --data-urlencode "node_id=*" \
   --data-urlencode "metric=*" \
   --data-urlencode "format=json" \
-  "http://smartgrid.almuzky.my.id:3001/api/v1/export/telemetry"
+  "https://smartgrid.almuzky.my.id/api/v1/export/telemetry"
 ```
 
-## 9. Pagination dengan cursor
+## Pagination dengan cursor
 
 Jika respons memiliki:
 
@@ -244,12 +213,12 @@ curl -sS -G \
   --data-urlencode "format=json" \
   --data-urlencode "limit=100" \
   --data-urlencode "cursor=CURSOR_TOKEN" \
-  "http://smartgrid.almuzky.my.id:3001/api/v1/export/telemetry"
+  "https://smartgrid.almuzky.my.id/api/v1/export/telemetry"
 ```
 
 Untuk format JSON, cursor berada di `data.next_cursor`. Untuk format CSV, cursor berada pada response header `X-Export-Next-Cursor`.
 
-## 10. Download telemetry sebagai CSV
+## Download telemetry sebagai CSV
 
 Format CSV adalah format default dan dikembalikan sebagai file attachment:
 
@@ -262,7 +231,7 @@ curl -sS -G \
   --data-urlencode "to=2026-09-12T23:59:59Z" \
   --data-urlencode "format=csv" \
   -o telemetry.csv \
-  "http://smartgrid.almuzky.my.id:3001/api/v1/export/telemetry"
+  "https://smartgrid.almuzky.my.id/api/v1/export/telemetry"
 ```
 
 CSV memiliki bentuk wide table. Contoh:
@@ -280,12 +249,12 @@ curl -sS -D headers.txt -G \
   --data-urlencode "node_id=SmartGrid-01" \
   --data-urlencode "format=csv" \
   -o telemetry.csv \
-  "http://smartgrid.almuzky.my.id:3001/api/v1/export/telemetry"
+  "https://smartgrid.almuzky.my.id/api/v1/export/telemetry"
 
 grep -i "X-Export-Next-Cursor" headers.txt
 ```
 
-## 11. Format waktu
+## Format waktu
 
 Format yang didukung:
 
@@ -297,7 +266,21 @@ Format yang didukung:
 
 Rentang export maksimum adalah **366 hari**. Untuk hasil yang konsisten, gunakan RFC3339 dengan timezone UTC (`Z`).
 
-## 12. Error umum
+## Parameter query
+
+| Parameter | Wajib | Keterangan |
+|---|---:|---|
+| `node_id` | Ya | Satu node, beberapa node dipisah koma, atau `*` untuk semua node. |
+| `metric` | Tidak | Satu metric, beberapa metric dipisah koma, atau `*` untuk semua metric. Default `*`. |
+| `from` | Tidak | Waktu awal: RFC3339, `YYYY-MM-DD`, atau Unix timestamp detik. Default 24 jam terakhir. |
+| `to` | Tidak | Waktu akhir: RFC3339, `YYYY-MM-DD`, atau Unix timestamp detik. Default waktu sekarang. |
+| `format` | Tidak | `json` atau `csv`. Default `csv`. |
+| `limit` | Tidak | Jumlah baris per halaman. Default `10000`, maksimum `100000`. |
+| `cursor` | Tidak | Cursor dari respons halaman sebelumnya. |
+
+Metric harus menggunakan nama yang tersimpan di kolom `metric`, misalnya `reg504`, bukan nama `source_key` MQTT jika keduanya berbeda.
+
+## Error umum
 
 ### 400 Bad Request
 
@@ -343,34 +326,12 @@ JWT valid, tetapi role user bukan `admin` atau `operator`.
 
 ### 500 Internal Server Error
 
-Export Service gagal membaca TimescaleDB atau mengalami error internal. Periksa log container:
+Export Service gagal membaca data historis. Periksa status layanan melalui log platform.
 
-```bash
-docker logs --tail 100 smartgrid-export
-```
-
-## 13. Query langsung untuk membandingkan hasil API
-
-API membaca tabel hypertable `public.telemetry` pada database `module_ts`. Query langsung dari PostgreSQL:
-
-```bash
-docker exec -it smartgrid-timescaledb-module \
-  psql -U module_user -d module_ts \
-  -c "SELECT time, node_id, module_id, metric, value FROM telemetry ORDER BY time DESC LIMIT 20;"
-```
-
-Query API dan query SQL dapat menampilkan jumlah berbeda jika filter node, metric, atau rentang waktu yang digunakan berbeda.
-
-## 14. OpenAPI
+## OpenAPI
 
 Spesifikasi OpenAPI dapat diakses tanpa token:
 
 ```bash
-curl -sS "http://smartgrid.almuzky.my.id:3001/api/v1/export/openapi"
-```
-
-Kontrak sumber berada di:
-
-```text
-services/export/openapi.yaml
+curl -sS "https://smartgrid.almuzky.my.id/api/v1/export/openapi"
 ```
