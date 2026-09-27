@@ -176,12 +176,12 @@ services:
       dockerfile: Dockerfile
     container_name: smartgrid-modbus-to-mqtt
     environment:
-      MODBUS_IP: ${MODBUS_IP:-10.44.10.191}
+      MODBUS_IP: ${MODBUS_IP:-<HOST_IP>}
       MODBUS_PORT: ${MODBUS_PORT:-502}
       MODBUS_UNIT_ID: ${MODBUS_UNIT_ID:-3}
       MODBUS_TIMEOUT: ${MODBUS_TIMEOUT:-3}
       POLL_INTERVAL: ${POLL_INTERVAL:-3}
-      MQTT_BROKER: ${MQTT_BROKER:-167.205.44.103}
+      MQTT_BROKER: ${MQTT_BROKER:-<MQTT_BROKER>}
       MQTT_PORT: ${MQTT_PORT:-1883}
       MQTT_USER: ${MQTT_USER:-}
       MQTT_PASS: ${MQTT_PASS:-}
@@ -198,11 +198,11 @@ services:
       dockerfile: Dockerfile
     container_name: smartgrid-weather-node
     environment:
-      WEATHER_LAT: ${WEATHER_LAT:--6.88826198022223}
-      WEATHER_LON: ${WEATHER_LON:-107.61124372496292}
+      WEATHER_LAT: ${WEATHER_LAT:-<LAT>}
+      WEATHER_LON: ${WEATHER_LON:-<LON>}
       WEATHER_API_TIMEOUT: ${WEATHER_API_TIMEOUT:-10}
       POLL_INTERVAL: ${WEATHER_POLL_INTERVAL:-60}
-      MQTT_BROKER: ${MQTT_BROKER:-167.205.44.103}
+      MQTT_BROKER: ${MQTT_BROKER:-<MQTT_BROKER>}
       MQTT_PORT: ${MQTT_PORT:-1883}
       MQTT_USER: ${MQTT_USER:-}
       MQTT_PASS: ${MQTT_PASS:-}
