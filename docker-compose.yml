@@ -263,6 +263,7 @@ services:
       PORT: 8080
       JWT_SECRET: ${JWT_SECRET}
       TIMESCALE_DSN: ${TIMESCALE_DSN:-postgres://module_user:module_pass@timescaledb-module:5432/module_ts?sslmode=disable}
+      EXPORT_NODE_LIST_CACHE_TTL: ${EXPORT_NODE_LIST_CACHE_TTL:-300}
     depends_on:
       - auth
       - timescaledb-module
