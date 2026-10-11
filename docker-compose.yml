@@ -262,7 +262,7 @@ services:
     environment:
       PORT: 8080
       JWT_SECRET: ${JWT_SECRET}
-      TIMESCALE_DSN: ${TIMESCALE_DSN:-postgres://module_user:module_pass@timescaledb-module:5432/module_ts?sslmode=disable}
+      TIMESCALE_DSN: ${TIMESCALE_DSN:?Set TIMESCALE_DSN}
       EXPORT_NODE_LIST_CACHE_TTL: ${EXPORT_NODE_LIST_CACHE_TTL:-300}
     depends_on:
       - auth
@@ -277,8 +277,8 @@ services:
     container_name: module
     environment:
       PORT: 8080
-      DB_DSN: ${MODULE_DB_DSN:-module_user:module_pass@tcp(mariadb-module:3306)/module_db?parseTime=true&charset=utf8mb4}
-      TIMESCALE_DSN: ${TIMESCALE_DSN:-postgres://module_user:module_pass@timescaledb-module:5432/module_ts?sslmode=disable}
+      DB_DSN: ${MODULE_DB_DSN:?Set MODULE_DB_DSN}
+      TIMESCALE_DSN: ${TIMESCALE_DSN:?Set TIMESCALE_DSN}
       REDIS_ADDR: redis-shared:6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       REDIS_DB: ${REDIS_DB:-0}
@@ -304,10 +304,10 @@ services:
     ports:
       - "3310:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: ${MODULE_DB_ROOT_PASSWORD:-rootpass}
+      MYSQL_ROOT_PASSWORD: ${MODULE_DB_ROOT_PASSWORD:?Set MODULE_DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MODULE_DB_NAME:-module_db}
       MYSQL_USER: ${MODULE_DB_USER:-module_user}
-      MYSQL_PASSWORD: ${MODULE_DB_PASSWORD:-module_pass}
+      MYSQL_PASSWORD: ${MODULE_DB_PASSWORD:?Set MODULE_DB_PASSWORD}
     volumes:
       - ./volumes/mariadb-module:/var/lib/mysql
       - ./infra/mariadb/module/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -321,7 +321,7 @@ services:
       MYSQLD_HOST: mariadb-module
       MYSQLD_PORT: 3306
       MYSQLD_USER: ${MODULE_DB_USER:-module_user}
-      MYSQLD_PASSWORD: ${MODULE_DB_PASSWORD:-module_pass}
+      MYSQLD_PASSWORD: ${MODULE_DB_PASSWORD:?Set MODULE_DB_PASSWORD}
     entrypoint: [ "/bin/sh", "-c" ]
     command:
       - >-
@@ -336,7 +336,7 @@ services:
       - "5440:5432"
     environment:
       POSTGRES_USER: ${TIMESCALE_DB_USER:-module_user}
-      POSTGRES_PASSWORD: ${TIMESCALE_DB_PASSWORD:-module_pass}
+      POSTGRES_PASSWORD: ${TIMESCALE_DB_PASSWORD:?Set TIMESCALE_DB_PASSWORD}
       POSTGRES_DB: ${TIMESCALE_DB_NAME:-module_ts}
     volumes:
       - ./volumes/timescaledb-module:/var/lib/postgresql/data
@@ -346,7 +346,7 @@ services:
     image: wrouesnel/postgres_exporter:latest
     container_name: smartgrid-timescaledb-exporter
     environment:
-      DATA_SOURCE_NAME: ${TIMESCALE_DSN:-postgres://module_user:module_pass@timescaledb-module:5432/module_ts?sslmode=disable}
+      DATA_SOURCE_NAME: ${TIMESCALE_DSN:?Set TIMESCALE_DSN}
     networks: [ smartgrid-network ]
     restart: unless-stopped
 networks:

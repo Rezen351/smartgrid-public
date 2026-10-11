@@ -87,6 +87,7 @@ docs/                  Architecture and operational notes
 - Never commit `.env`, tokens, private keys, passwords, or production URLs.
 - Use `.env.example` as the only committed configuration template.
 - Rotate any credential that may have been exposed in Git history.
+- Review Git history separately when auditing leaks; deleting a secret from the latest commit does not remove it from past commits.
 - Do not expose database, broker, or monitoring ports to the public internet without authentication and network controls.
 - Treat this repository as a learning/reference deployment, not a production-ready turnkey system.
 
