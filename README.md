@@ -1,155 +1,109 @@
-# SmartGrid
+# SmartGrid Public
 
-<div align="center">
+A sanitized reference architecture for an IoT smart-energy platform. The project demonstrates how containerized services can combine device messaging, authentication, time-series data, monitoring, and machine-learning-assisted energy decisions.
 
-[![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Docker Compose](https://img.shields.io/badge/Docker_Compose-Orchestration-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Relational-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Grafana](https://img.shields.io/badge/Grafana-Visualization-F46800?logo=grafana&logoColor=white)](https://grafana.com/)
-[![Prometheus](https://img.shields.io/badge/Prometheus-Metrics-E6522C?logo=prometheus&logoColor=white)](https://prometheus.io/)
-[![MQTT](https://img.shields.io/badge/MQTT-Mosquitto-660066?logo=eclipse&logoColor=white)](https://mosquitto.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+> **Status:** Public reference edition. The production SmartGrid repository remains private.
 
-**Infrastruktur Docker Compose untuk platform IoT Smart Grid, messaging, time-series database, dan monitoring stack.**
+## Highlights
 
-</div>
+- Docker Compose-based local infrastructure
+- MQTT and NATS messaging patterns
+- PostgreSQL and time-series storage
+- Prometheus and Grafana observability
+- Modular Go services for authentication, device logic, and data export
+- Python/FastAPI machine-learning service with safety guardrails
+- Environment-based configuration with no credentials committed
 
-> **⚠️ ML Service** berjalan pada host terpisah menggunakan `docker-compose.ml-host.yml`. Jalankan main stack terlebih dahulu sebelum menjalankan ML service.
+## Architecture
 
-## Prasyarat
-
-- [Docker](https://www.docker.com/get-started)
-- [Docker Compose](https://docs.docker.com/compose/install/)
-- [Git](https://git-scm.com/downloads)
-- File `.env` berisi konfigurasi sensitif
-
-## Setup Awal
-
-```bash
-git clone https://github.com/Rezen351/smartgrid.git
-cd smartgrid
-cp .env.example .env
+```text
+IoT devices
+    │
+    ├── MQTT / NATS
+    │
+    ▼
+┌───────────────┐     ┌──────────────────┐
+│ Go services   │────▶│ PostgreSQL / TSDB │
+│ auth/module   │     └──────────────────┘
+│ export        │
+└───────┬───────┘
+        │
+        ▼
+┌───────────────────────┐
+│ Dashboard & ML service│
+└───────────┬───────────┘
+            │
+            ▼
+     Prometheus / Grafana
 ```
 
-Edit `.env` dan ganti semua nilai `CHANGE_ME_*` dengan nilai yang aman.
+## Quick start
 
-## Jalankan
+### Requirements
 
-**Main stack:**
+- Docker Engine
+- Docker Compose v2
+- Git
+
+### Run locally
+
 ```bash
+git clone https://github.com/Rezen351/smartgrid-public.git
+cd smartgrid-public
+cp .env.example .env
+# Replace every CHANGE_ME_* value before starting services.
 docker compose up -d
 ```
 
-**ML service (host terpisah):**
+Validate the configuration and inspect the services:
+
+```bash
+docker compose config
+docker compose ps
+docker compose logs -f
+```
+
+The ML service, when included in this public edition, can be started with:
+
 ```bash
 docker compose -f docker-compose.ml-host.yml up -d
 ```
 
-**Cek status:**
-```bash
-docker compose ps
-docker compose -f docker-compose.ml-host.yml ps
-```
-
-## Arsitektur
-
-| Service | Port | Fungsi |
-|---|---|---|
-| **nginx** | `3001` | Reverse proxy |
-| **cloudflared** | - | Cloudflare tunnel |
-| **grafana** | `3000` | Visualization dashboard |
-| **prometheus** | `9090` | Metrics & alerting |
-| **cadvisor** | `8080` | Container metrics |
-| **dashboard** | `5000` | Flask HMI/API |
-| **auth** | `8080` | Auth service (JWT, RBAC) |
-| **module** | `8080` | IoT module logic |
-| **export** | `8080` | Time-series export |
-| **ml** | `8000` | ML service *(via `docker-compose.ml-host.yml`)* |
-| **nats** | `4222`, `8222` | Messaging (JetStream) |
-| **mosquitto** | `1883` | MQTT broker |
-| **redis-shared** | `6379` | Shared cache |
-| **postgres-dashboard** | `5432` | Dashboard DB |
-| **postgres-auth** | `5432` | Auth DB |
-| **mariadb-module** | `3306` | Module relational DB |
-| **timescaledb-module** | `5432` | Module time-series DB |
-| ***-exporter** | `9xxx` | Prometheus exporters |
-
-> Akses semua service melalui `http://localhost:3001/`. ML service diakses via `http://localhost:8000` atau domain Cloudflare Tunnel.
-
-## Struktur Project
+## Repository layout
 
 ```text
-smartgrid/
-├── docker-compose.yml              # Main stack (tanpa ML)
-├── docker-compose.ml-host.yml      # ML service (host terpisah)
-├── .env
-├── .env.example
-├── README.md
-├── infra/
-│   ├── nginx/default.conf
-│   ├── cloudflared/config.yml
-│   ├── cloudflared/ml-config.yml
-│   ├── mosquitto/config/
-│   ├── grafana/provisioning/
-│   ├── prometheus/prometheus.yml
-│   └── mariadb/module/init.sql
-├── services/
-│   ├── auth/          # Go: authentication & RBAC
-│   ├── module/        # Go: IoT module logic
-│   ├── export/        # Go: data export
-│   └── dashboard/     # Flask: HMI & API
-├── tests/
-├── volumes/
-└── docs/
+infra/                 Infrastructure configuration
+services/auth/         Authentication and RBAC service
+services/module/       IoT module logic
+services/export/       Time-series export service
+services/dashboard/   HMI/API dashboard
+services/ml/           ML inference service
+tests/                 Automated tests
+docs/                  Architecture and operational notes
 ```
 
-## Monitoring
+## Security
 
-- **Prometheus** — `http://localhost:9090`
-- **Grafana** — `http://localhost:3001/grafana/`
-- **cAdvisor** — `http://localhost:8080`
-
-## Layanan Aplikasi
-
-- **Dashboard** — `http://localhost:3001/dashboard/`
-- **Auth** — `http://localhost:3001/auth/`
-- **Module** — `http://localhost:3001/modules/`
-- **ML Service** — `http://localhost:8000` *(host terpisah)*
-
-## Messaging
-
-- **NATS** — JetStream messaging, port `4222` / `8222`
-- **Mosquitto MQTT** — port `1883`
-- **Export** — `http://localhost:3001/export/`
+- Never commit `.env`, tokens, private keys, passwords, or production URLs.
+- Use `.env.example` as the only committed configuration template.
+- Rotate any credential that may have been exposed in Git history.
+- Do not expose database, broker, or monitoring ports to the public internet without authentication and network controls.
+- Treat this repository as a learning/reference deployment, not a production-ready turnkey system.
 
 ## Testing
 
 ```bash
-docker compose config
-docker compose -f docker-compose.ml-host.yml config
-
 for service in auth module export; do
-    (cd "services/$service" && go test -v ./... && go vet ./...)
+  (cd "services/$service" && go test ./... && go vet ./...)
 done
 
 (cd services/dashboard && python -m py_compile app.py history.py research.py)
 ```
 
-## Keamanan
+## Contributing
 
-- Jangan commit token atau secret ke repository
-- Gunakan `.env` untuk nilai sensitif
-- Gunakan Cloudflare Tunnel untuk akses eksternal
-- Ganti seluruh nilai `CHANGE_ME_*` sebelum deployment
-- Jangan expose port database tanpa autentikasi dan pembatasan jaringan
+Issues and pull requests are welcome for documentation, tests, security improvements, and deployment portability. Please avoid submitting real credentials, private infrastructure details, or customer data.
 
-## Deployment Notes
+## License
 
-1. Jalankan main stack terlebih dahulu: `docker compose up -d`
-2. Pastikan network `smartgrid-network` sudah ada
-3. Jalankan ML service: `docker compose -f docker-compose.ml-host.yml up -d`
-4. Validasi Cloudflare Tunnel di `infra/cloudflared/config.yml` dan `infra/cloudflared/ml-config.yml`
-
-## Lisensi
-
-Project ini dirilis di bawah [MIT License](LICENSE).
+MIT License. See [LICENSE](LICENSE).
